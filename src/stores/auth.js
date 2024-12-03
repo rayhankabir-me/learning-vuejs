@@ -5,6 +5,8 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: null,
     user: null,
+    errors: null,
+    loading: false,
   }),
 
   getters: {
@@ -16,12 +18,9 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async getUser(accessToken) {
       this.token = accessToken
+      localStorage.setItem('access_token', accessToken)
       try {
-        const userData = await axios.get('https://learning-laravel.test/api/user', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
+        const userData = await axios.get('api/user')
         this.user = userData.data
       } catch (error) {
         const errorMessage = error.message || 'An error occurred'
@@ -30,12 +29,15 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async login(formData) {
+      this.errors = null
+      this.loading = true
       try {
         const response = await axios.post('https://learning-laravel.test/api/login', formData)
         await this.getUser(response.data.access_token)
+        this.loading = false
       } catch (error) {
-        const errorMessage = error.message || 'An error occurred'
-        console.log(errorMessage)
+        this.errors = error.response
+        this.loading = false
       }
     },
   },
